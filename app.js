@@ -12,7 +12,9 @@
   // ---------- utilidades ----------
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const toast = (msg) => { const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("ver"); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("ver"), 2600); };
-  const categorias = () => (window.MITICOS?.categorias || []).filter((c) => !c.oculta && (c.nominados || []).length >= (C.MIN_NOMINADOS || 3));
+  const todasCategorias = () => (window.MITICOS?.categorias || []).filter((c) => !c.oculta);
+  const lista = (c) => (c.nominados || []).length >= (C.MIN_NOMINADOS || 3);
+  const categorias = () => todasCategorias().filter(lista);
   const categoria = (id) => categorias().find((c) => c.id === id);
   const nominado = (cat, id) => cat.nominados.find((n) => n.id === id);
   const maxTop = (cat) => Math.min(5, cat.nominados.length);
@@ -56,7 +58,9 @@
     },
     async guardar(cat, ranking) {
       if (DEMO) { const v = LS.get("votos", {}); v[cat] = ranking; LS.set("votos", v); S.votos[cat] = ranking; return null; }
-      const { error } = await sb.from("votos").upsert({ email: S.usuario.email.toLowerCase(), categoria: cat, ranking, actualizado: new Date().toISOString() });
+      const peticion = sb.from("votos").upsert({ email: S.usuario.email.toLowerCase(), categoria: cat, ranking, actualizado: new Date().toISOString() });
+      const limite = new Promise((ok) => setTimeout(() => ok({ error: { message: "sin respuesta del servidor, recarga la página y prueba otra vez" } }), 15000));
+      const { error } = await Promise.race([peticion, limite]);
       if (!error) S.votos[cat] = ranking;
       return error;
     },
@@ -110,7 +114,7 @@
 
   // ---------- vistas ----------
   function vistaInicio() {
-    const cats = categorias();
+    const cats = todasCategorias();
     app.innerHTML = `
       <section class="hero">
         <div class="haces" aria-hidden="true"></div><div class="haces b" aria-hidden="true"></div>
@@ -139,12 +143,12 @@
       </section>
       <h2 style="margin-bottom:18px">Categorías</h2>
       <div class="cats">${cats.map((c) => `
-        <a class="cat ${c.principal ? "principal" : ""}" href="#/votar/${c.id}">
+        <${lista(c) ? "a" : "div"} class="cat ${c.principal ? "principal" : ""} ${lista(c) ? "" : "pronto"}" ${lista(c) ? `href="#/votar/${c.id}"` : ""}>
           ${c.principal ? '<p class="eyebrow">Categoría principal</p>' : ""}
           <h3>${esc(c.nombre)}</h3>
           <p class="muted" style="margin:0">${esc(c.descripcion || "")}</p>
-          <span class="estado">${c.nominados.length} nominados</span>
-        </a>`).join("")}</div>`;
+          <span class="estado">${lista(c) ? c.nominados.length + " nominados" : "Nominados próximamente"}</span>
+        </${lista(c) ? "a" : "div"}>`).join("")}</div>`;
     cuentaAtras();
   }
 
@@ -255,8 +259,11 @@
         <div class="progreso"><span class="muted">${hechas} de ${cats.length} categorías votadas</span>
           <div class="barra"><i style="width:${cats.length ? (100 * hechas) / cats.length : 0}%"></i></div></div>
       </div>
-      <div class="cats">${cats.map((c, i) => {
+      <div class="cats">${todasCategorias().map((c, i) => {
         const v = S.votos[c.id];
+        if (!lista(c)) return `<div class="cat pronto"><span class="num">${String(i + 1).padStart(2, "0")}</span>
+          <h3>${esc(c.nombre)}</h3><p class="muted" style="margin:0">${esc(c.descripcion || "")}</p>
+          <span class="estado">Nominados próximamente</span></div>`;
         return `<a class="cat ${c.principal ? "principal" : ""}" href="#/votar/${c.id}">
           ${c.principal ? '<p class="eyebrow">Categoría principal</p>' : ""}
           <span class="num">${String(i + 1).padStart(2, "0")}</span>
@@ -460,7 +467,11 @@
 
   window.addEventListener("hashchange", router);
   (async function arrancar() {
-    if (!DEMO) sb.auth.onAuthStateChange(async (ev) => { if (ev === "SIGNED_IN" || ev === "SIGNED_OUT") { await iniciarSesion(); router(); } });
+    // Importante: no llamar a Supabase dentro del callback (se bloquea); se hace en el siguiente tick
+    if (!DEMO) sb.auth.onAuthStateChange((ev, ses) => {
+      const antes = S.usuario?.email || null, ahora = ses?.user?.email || null;
+      if ((ev === "SIGNED_IN" || ev === "SIGNED_OUT") && antes !== ahora) setTimeout(async () => { await iniciarSesion(); router(); }, 0);
+    });
     await iniciarSesion();
     router();
   })();
