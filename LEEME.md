@@ -1,4 +1,6 @@
-# Míticos Awards 2026
+# MOTY 2026 · Míticos Of The Year
+
+Web: https://javierlarrea99.github.io/miticos-awards/
 
 Web de votación del grupo: cada uno entra con su correo y vota su top 5 en cada categoría
 (1º = 10 pts, 2º = 7, 3º = 5, 4º = 3, 5º = 1). Gana quien sume más puntos; si hay empate, el que tenga más primeros puestos.
@@ -29,8 +31,8 @@ Repositorio → **Settings → Pages** → Source: *Deploy from a branch* → `m
 - **Añadir o quitar categorías / nominados:** `nominados.js`. Una categoría con menos de 3 nominados no aparece.
   No cambies el `id` de una categoría o nominado una vez empiece la votación.
 - **Clips:** súbelos a `clips/<categoria>/` en MP4 720p y ligeros (menos de 25 MB cada uno; GitHub no acepta archivos de más de 100 MB).
-- **Añadir a un amigo:** en Supabase → SQL Editor:
-  `insert into votantes (email, nombre) values ('correo@gmail.com', 'Nombre');`
+- **Quién puede votar:** con la *Inscripción abierta* (Admin) cualquiera que entre con su correo y confirme el enlace queda apuntado con el nombre que elija.
+  Cuando estéis todos, ciérrala en Admin y solo podrá entrar la lista. Desde Admin también puedes añadir o quitar gente.
 - **La gala:** en **Admin** cierra la votación y pulsa **Revelar** en cada categoría. Los demás lo ven en **Resultados** en unos segundos.
 
 Si abres la web sin rellenar `config.js`, funciona en **modo prueba** (los votos solo se guardan en tu navegador).

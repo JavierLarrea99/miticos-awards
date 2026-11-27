@@ -283,3 +283,6 @@ body {
 .res-cat header h3 { font-size: clamp(18px, 2.6vw, 26px); }
 .hero .haces { -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12%, #000 55%, transparent 95%); mask-image: linear-gradient(180deg, transparent 0, #000 12%, #000 55%, transparent 95%); }
 .hero .the { text-transform: uppercase; }
+
+.hero h1.moty { font-size: clamp(84px, 22vw, 250px); letter-spacing: .02em; line-height: .86; }
+.hero .awards { font-size: clamp(13px, 2.6vw, 26px); letter-spacing: .48em; padding-left: .48em; margin-top: 16px; }

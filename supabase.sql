@@ -155,11 +155,35 @@ revoke execute on function public.quitar_votante(text) from public, anon;
 grant execute on function public.guardar_votante(text, text) to authenticated;
 grant execute on function public.quitar_votante(text) to authenticated;
 
--- =====================================================================
---  TU GRUPO: cambia los nombres y correos (en minúsculas). Tú, con es_admin = true
--- =====================================================================
-insert into public.votantes (email, nombre, es_admin) values
-  ('tu_correo@gmail.com', 'Fitxi', true),
-  ('amigo1@gmail.com',    'Amigo 1', false),
-  ('amigo2@gmail.com',    'Amigo 2', false)
-on conflict (email) do update set nombre = excluded.nombre, es_admin = excluded.es_admin;
+-- MOTY: inscripción abierta (cualquiera con correo verificado puede unirse) + admin
+alter table public.ajustes add column if not exists registro_abierto boolean not null default true;
+
+create or replace function public.puede_entrar(correo text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select (select registro_abierto from ajustes where id = 1)
+      or exists (select 1 from votantes where email = lower(trim(correo)))
+$$;
+
+-- Se llama después de entrar con el enlace del correo (sesión verificada)
+create or replace function public.unirme(nombre_v text)
+returns void language plpgsql security definer set search_path = public as $$
+declare correo text := public.mi_email(); n text := trim(coalesce(nombre_v, ''));
+begin
+  if auth.uid() is null or correo = '' then raise exception 'Tienes que entrar primero'; end if;
+  if not exists (select 1 from auth.users u where u.id = auth.uid() and u.email_confirmed_at is not null) then
+    raise exception 'Correo sin verificar';
+  end if;
+  if char_length(n) < 2 or char_length(n) > 24 then raise exception 'El nombre debe tener entre 2 y 24 letras'; end if;
+  if exists (select 1 from votantes where email = correo) then
+    update votantes set nombre = n where email = correo; return;
+  end if;
+  if not (select registro_abierto from ajustes where id = 1) then raise exception 'La inscripción está cerrada'; end if;
+  insert into votantes (email, nombre) values (correo, n);
+end $$;
+revoke execute on function public.unirme(text) from public, anon;
+grant execute on function public.unirme(text) to authenticated;
+
+-- Admin (tú)
+insert into public.votantes (email, nombre, es_admin) values ('larreagallego@gmail.com', 'Fitxi', true)
+on conflict (email) do update set es_admin = true;
+

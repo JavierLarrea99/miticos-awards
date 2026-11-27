@@ -1,4 +1,4 @@
-/* Míticos Awards 2026 · lógica de la web (sin frameworks) */
+/* MOTY 2026 · Míticos Of The Year · lógica de la web (sin frameworks) */
 (function () {
   "use strict";
   const C = window.CONFIG || {};
@@ -7,7 +7,7 @@
   const sb = DEMO ? null : window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
   const app = document.getElementById("app");
 
-  const S = { usuario: null, votante: null, ajustes: { votacion_abierta: true, resultados_publicos: false, categorias_reveladas: [] }, votos: {}, borrador: {} };
+  const S = { usuario: null, votante: null, ajustes: { votacion_abierta: true, resultados_publicos: false, registro_abierto: true, categorias_reveladas: [] }, votos: {}, borrador: {} };
 
   // ---------- utilidades ----------
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -121,9 +121,8 @@
           <path fill="url(#go)" d="M50 112h20l4 40H46z" opacity=".9"/>
           <path fill="url(#go)" d="M34 156h52l6 14H28zM22 174h76v16H22z"/>
         </svg>
-        <p class="the">The</p>
-        <h1 class="oro">MÍTICOS</h1>
-        <p class="awards">Awards</p>
+        <h1 class="oro moty">MOTY</h1>
+        <p class="awards">Míticos of the year</p>
         <span class="anio">2026</span><div class="linea-oro"></div>
         <p class="lema">Un año entero de clips, gritos y partidas. Ahora toca decidir qué fue lo mejor.</p>
         <div class="cuenta" id="cuenta" hidden></div>
@@ -199,7 +198,7 @@
       const b = f1.querySelector("button"); b.disabled = true;
       if (DEMO) { LS.set("usuario", { email: correo }); await API.sesion(); await API.misVotos(); location.hash = "#/votar"; return; }
       const { data: ok, error: e0 } = await sb.rpc("puede_entrar", { correo });
-      if (e0 || !ok) { b.disabled = false; return err("e1", "Este correo no está en la lista del grupo. Pídele a Fitxi que te añada."); }
+      if (e0 || !ok) { b.disabled = false; return err("e1", "Ahora mismo no se aceptan correos nuevos. Pídele a Fitxi que te añada."); }
       const { error } = await sb.auth.signInWithOtp({ email: correo, options: { emailRedirectTo: location.origin + location.pathname } });
       b.disabled = false;
       if (error) return err("e1", error.status === 429 ? "Demasiados intentos. Espera un minuto y vuelve a probar." : "No se pudo enviar el correo: " + error.message);
@@ -217,15 +216,42 @@
     });
   }
 
+  function vistaUnirme() {
+    const sugerido = (S.usuario.email || "").split("@")[0].slice(0, 20);
+    if (!S.ajustes.registro_abierto) {
+      app.innerHTML = `<div class="caja"><p class="eyebrow">MOTY 2026</p><h2>Inscripción cerrada</h2>
+        <p class="muted">Tu correo (${esc(S.usuario.email)}) no está en la lista y ya no se admiten nuevos votantes. Habla con Fitxi.</p></div>`;
+      return;
+    }
+    app.innerHTML = `<form class="caja" id="f-unirme" novalidate><p class="eyebrow">Último paso</p><h2>¿Cómo te llamas?</h2>
+      <p class="muted">Es el nombre que verá el grupo. Has entrado como ${esc(S.usuario.email)}.</p>
+      <label for="mi-nombre">Tu nombre o apodo</label>
+      <input id="mi-nombre" type="text" maxlength="24" required value="${esc(sugerido)}">
+      <p class="error" id="e3" hidden></p>
+      <button class="btn oro-b" type="submit">Entrar a votar</button></form>`;
+    const f = document.getElementById("f-unirme");
+    f.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const nombre = document.getElementById("mi-nombre").value.trim();
+      const e3 = document.getElementById("e3");
+      if (nombre.length < 2) { e3.textContent = "Pon al menos 2 letras."; e3.hidden = false; return; }
+      f.querySelector("button").disabled = true;
+      const { error } = await sb.rpc("unirme", { nombre_v: nombre });
+      if (error) { e3.textContent = "No se pudo: " + error.message; e3.hidden = false; f.querySelector("button").disabled = false; return; }
+      await iniciarSesion(); toast("¡Bienvenido a los MOTY, " + nombre + "!"); router();
+    });
+  }
+
   function vistaVotar() {
     if (!S.usuario) return pideEntrar();
+    if (!DEMO && !S.votante) return vistaUnirme();
     const cats = categorias();
     const hechas = cats.filter((c) => S.votos[c.id]?.length).length;
     app.innerHTML = `
       <div class="cabecera-seccion">
         <div><p class="eyebrow">${S.votante ? "Hola, " + esc(S.votante.nombre) : "Tu papeleta"}</p><h2>Tus votos</h2>
           ${S.ajustes.votacion_abierta ? "" : '<p class="muted">La votación está cerrada. Ya no se pueden cambiar los votos.</p>'}
-          ${!DEMO && !S.votante ? '<p class="error">Tu correo no está en la lista del grupo, así que no puedes votar.</p>' : ""}</div>
+</div>
         <div class="progreso"><span class="muted">${hechas} de ${cats.length} categorías votadas</span>
           <div class="barra"><i style="width:${cats.length ? (100 * hechas) / cats.length : 0}%"></i></div></div>
       </div>
@@ -249,6 +275,7 @@
 
   function vistaCategoria(id) {
     if (!S.usuario) return pideEntrar();
+    if (!DEMO && !S.votante) return vistaUnirme();
     const cat = categoria(id);
     if (!cat) { app.innerHTML = '<p class="vacio-msg">Esta categoría no existe o aún no tiene nominados.</p>'; return; }
     const abierta = S.ajustes.votacion_abierta && (DEMO || S.votante);
@@ -368,6 +395,8 @@
             <button class="btn linea peq" data-aj="votacion_abierta">${a.votacion_abierta ? "Cerrar" : "Abrir"}</button></div>
           <div class="interruptor"><span>Resultados ${a.resultados_publicos ? "<b>públicos</b>" : "ocultos"}</span>
             <button class="btn linea peq" data-aj="resultados_publicos">${a.resultados_publicos ? "Ocultar todos" : "Mostrar todos"}</button></div>
+          <div class="interruptor"><span>Inscripción ${a.registro_abierto ? "<b>abierta</b> (cualquiera que entre con su correo)" : "<b>cerrada</b> (solo la lista)"}</span>
+            <button class="btn linea peq" data-aj="registro_abierto">${a.registro_abierto ? "Cerrar" : "Abrir"}</button></div>
           <p class="muted" style="font-size:14px">En la gala, cierra la votación y revela las categorías una a una aquí abajo. Los demás lo verán en <a href="#/resultados">Resultados</a> a los pocos segundos.</p>
         </section>
         <section class="regla"><h3>Revelar en la gala</h3>
