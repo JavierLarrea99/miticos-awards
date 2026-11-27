@@ -4,7 +4,10 @@
   const C = window.CONFIG || {};
   const PUNTOS = [10, 7, 5, 3, 1];
   const DEMO = !C.SUPABASE_URL || C.SUPABASE_URL.includes("TU-PROYECTO") || !window.supabase;
-  const sb = DEMO ? null : window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+  const sb = DEMO ? null : window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY, {
+    // Sin bloqueo entre pestañas: el de supabase-js se quedaba atascado y colgaba todas las peticiones
+    auth: { lock: async (_nombre, _espera, fn) => await fn() },
+  });
   const app = document.getElementById("app");
 
   const S = { usuario: null, votante: null, ajustes: { votacion_abierta: true, resultados_publicos: false, registro_abierto: true, categorias_reveladas: [] }, votos: {}, borrador: {} };

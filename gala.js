@@ -3,7 +3,10 @@
   "use strict";
   const C = window.CONFIG || {};
   const DEMO = !C.SUPABASE_URL || C.SUPABASE_URL.includes("TU-PROYECTO") || !window.supabase;
-  const sb = DEMO ? null : window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+  const sb = DEMO ? null : window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY, {
+    // Sin bloqueo entre pestañas: el de supabase-js se quedaba atascado y colgaba todas las peticiones
+    auth: { lock: async (_nombre, _espera, fn) => await fn() },
+  });
   const PUNTOS = [10, 7, 5, 3, 1];
   const lienzo = document.getElementById("lienzo");
   const hud = document.getElementById("hud");
