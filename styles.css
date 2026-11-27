@@ -290,3 +290,10 @@ body {
 .cat.pronto { opacity: .55; cursor: default; border-style: dashed; }
 .cat.pronto:hover { transform: none; border-color: var(--line); }
 .cat.pronto::before { display: none; }
+
+.mando { margin-bottom: 18px; border-color: var(--gold-3); }
+.paso-actual { display: grid; gap: 4px; padding: 14px 16px; background: #0b0a0e; border: 1px solid var(--line); border-radius: 6px; margin: 12px 0; }
+.paso-actual small { color: var(--muted); font-size: 13px; }
+.paso-actual b { font-size: 20px; color: var(--gold-2); }
+.mando-btns { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.mando-btns .btn { min-height: 58px; font-size: 16px; }

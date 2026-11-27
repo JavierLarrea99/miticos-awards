@@ -187,3 +187,6 @@ grant execute on function public.unirme(text) to authenticated;
 insert into public.votantes (email, nombre, es_admin) values ('larreagallego@gmail.com', 'Fitxi', true)
 on conflict (email) do update set es_admin = true;
 
+
+-- Gala en directo: paso actual (lo mueve el admin)
+alter table public.ajustes add column if not exists gala_paso int not null default 0;

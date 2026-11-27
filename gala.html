@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data:; media-src 'self'; connect-src 'self' https://zhgvaufvhwsthtywkyih.supabase.co wss://zhgvaufvhwsthtywkyih.supabase.co; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOTY 2026 · Gala en directo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23e0a84a' d='M18 6h28v8h10v6c0 9-7 16-16 17a14 14 0 0 1-6 5v8h10v8H20v-8h10v-8a14 14 0 0 1-6-5C15 36 8 29 8 20v-6h10zm-4 14c0 5 3 9 7 11-2-3-3-7-3-11zm36 0h-4c0 4-1 8-3 11 4-2 7-6 7-11z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="gala.css?v=1">
+</head>
+<body>
+<div id="escena"><div id="lienzo"></div><canvas id="confeti" width="1920" height="1080"></canvas></div>
+<div id="hud" hidden></div>
+<div id="empezar"><div><b>MOTY 2026 · Gala</b><span>Pulsa cualquier tecla o haz clic para activar el sonido</span><small>→ / espacio: siguiente · ← : anterior · F: pantalla completa · H: ayuda · M: silencio</small></div></div>
+<script src="vendor/supabase.js?v=2.45.4"></script>
+<script src="config.js?v=6"></script>
+<script src="nominados.js?v=6"></script>
+<script src="gala-pasos.js?v=1"></script>
+<script src="gala.js?v=1"></script>
+</body>
+</html>

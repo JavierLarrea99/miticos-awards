@@ -396,6 +396,16 @@
     const a = S.ajustes, cats = categorias();
     app.innerHTML = `
       <div class="cabecera-seccion"><div><p class="eyebrow">Organizador</p><h2>Panel de la gala</h2></div></div>
+      <section class="regla mando">
+        <h3>Gala en directo</h3>
+        <p class="muted" style="font-size:14px;margin-top:0">Abre la <a href="gala.html" target="_blank" rel="noopener">pantalla de la gala</a> en el PC que emite (pulsa F para pantalla completa) y manda desde aquí con el móvil. Al llegar a «¡Ganador!» la categoría se revela sola en Resultados.</p>
+        ${(() => { const P = window.MOTY_PASOS(), i = Math.min(a.gala_paso || 0, P.length - 1), p = P[i], sig = P[i + 1];
+          const nombre = (x) => x ? window.MOTY_PASO_NOMBRE[x.t] + (x.cat ? " · " + esc((categoria(x.cat) || {}).nombre || "") : "") : "Fin";
+          return `<div class="paso-actual"><small>Ahora (${i + 1}/${P.length})</small><b>${nombre(p)}</b><small>Siguiente: ${nombre(sig)}</small></div>
+          <div class="mando-btns"><button class="btn linea" data-gala="-1" ${i === 0 ? "disabled" : ""}>◀ Atrás</button>
+            <button class="btn oro-b" data-gala="1" ${!sig ? "disabled" : ""}>Siguiente ▶</button></div>
+          <button class="link" data-gala="reinicio" style="margin-top:10px">Volver a la portada</button>`; })()}
+      </section>
       <div class="admin-grid">
         <section class="regla"><h3>Votación</h3>
           <div class="interruptor"><span>Votación ${a.votacion_abierta ? "<b>abierta</b>" : "<b>cerrada</b>"}</span>
@@ -432,6 +442,16 @@
     app.querySelectorAll("[data-quitar-v]").forEach((b) => b.addEventListener("click", async () => {
       const e = await API.quitarVotante(b.dataset.quitarV);
       toast(e ? "Error: " + e.message : "Quitado"); vistaAdmin();
+    }));
+    app.querySelectorAll("[data-gala]").forEach((b) => b.addEventListener("click", async () => {
+      const P = window.MOTY_PASOS(), act = Math.min(S.ajustes.gala_paso || 0, P.length - 1);
+      const i = b.dataset.gala === "reinicio" ? 0 : Math.max(0, Math.min(P.length - 1, act + +b.dataset.gala));
+      const cambios = { gala_paso: i }, p = P[i];
+      if (p.t === "ganador" && !S.ajustes.categorias_reveladas.includes(p.cat)) cambios.categorias_reveladas = [...S.ajustes.categorias_reveladas, p.cat];
+      b.disabled = true;
+      const e = await API.cambiarAjustes(cambios);
+      if (e) toast("Error: " + e.message); else if (cambios.categorias_reveladas) toast("¡" + (categoria(p.cat) || {}).nombre + " revelada!");
+      vistaAdmin();
     }));
     app.querySelectorAll("[data-aj]").forEach((b) => b.addEventListener("click", async () => {
       const k = b.dataset.aj; const e = await API.cambiarAjustes({ [k]: !S.ajustes[k] });

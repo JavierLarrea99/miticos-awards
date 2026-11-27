@@ -36,3 +36,11 @@ Repositorio → **Settings → Pages** → Source: *Deploy from a branch* → `m
 - **La gala:** en **Admin** cierra la votación y pulsa **Revelar** en cada categoría. Los demás lo ven en **Resultados** en unos segundos.
 
 Si abres la web sin rellenar `config.js`, funciona en **modo prueba** (los votos solo se guardan en tu navegador).
+
+## La gala en directo (YouTube)
+
+1. En el PC que emite, abre `https://javierlarrea99.github.io/miticos-awards/gala.html` en Chrome (con tu sesión iniciada) y pulsa **F** (pantalla completa).
+2. En OBS: *Captura de ventana* de ese Chrome (o *Fuente de navegador* 1920×1080 con esa dirección). Activa el audio de la ventana para que se oigan el redoble y los clips.
+3. Manda con **→ / espacio** en ese PC o con **Siguiente ▶** en Admin desde el móvil. Cada premio: categoría → nominados → suspense → ¡ganador! → clasificación.
+4. Al llegar a «¡Ganador!» la categoría se revela sola en la página de Resultados. Las teclas: ← atrás, M silencio, H ayuda.
+5. En YouTube, emite como **Oculto** y pasa el enlace al grupo.
