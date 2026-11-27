@@ -79,6 +79,14 @@
       if (!error) S.ajustes = { ...S.ajustes, ...cambios };
       return error;
     },
+    async votante(correo, nombre) {
+      if (DEMO) return null;
+      const { error } = await sb.rpc("guardar_votante", { correo, nombre_v: nombre }); return error;
+    },
+    async quitarVotante(correo) {
+      if (DEMO) return null;
+      const { error } = await sb.rpc("quitar_votante", { correo }); return error;
+    },
     async quienHaVotado() {
       if (DEMO) return [{ nombre: "Prueba", email: "prueba@demo", categorias: Object.keys(LS.get("votos", {})).length }];
       const { data } = await sb.rpc("quien_ha_votado");
@@ -167,15 +175,15 @@
     app.innerHTML = `
       <form class="caja" id="f-correo" novalidate>
         <p class="eyebrow">Paso 1 de 2</p><h2>Entra con tu correo</h2>
-        <p class="muted">Te mandaremos un código de 6 cifras (y un enlace) para entrar.</p>
+        <p class="muted">Te mandaremos un enlace para entrar. Ábrelo en este mismo móvil u ordenador.</p>
         <label for="correo">Tu correo</label>
         <input id="correo" type="email" autocomplete="email" required placeholder="tucorreo@gmail.com">
         <p class="error" id="e1" hidden></p>
-        <button class="btn oro-b" type="submit">Enviarme el código</button>
+        <button class="btn oro-b" type="submit">Enviarme el enlace</button>
       </form>
       <form class="caja" id="f-codigo" novalidate hidden>
         <p class="eyebrow">Paso 2 de 2</p><h2>Mira tu correo</h2>
-        <p class="muted">Escribe el código que te ha llegado (mira también en spam) o pulsa el enlace del email.</p>
+        <p class="muted">Te ha llegado un correo de Supabase ("Your sign-in link"). Pulsa <b>Sign in</b> y entrarás directamente. Mira también en spam. Si en vez de enlace te llega un código, escríbelo aquí:</p>
         <label for="codigo">Código</label>
         <input id="codigo" class="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
         <p class="error" id="e2" hidden></p>
@@ -366,11 +374,29 @@
           ${cats.map((c) => { const r = a.categorias_reveladas.includes(c.id); return `<div class="interruptor"><span>${esc(c.nombre)}</span>
             <button class="btn ${r ? "linea" : "oro-b"} peq" data-rev="${c.id}">${r ? "Ocultar" : "Revelar"}</button></div>`; }).join("")}
         </section>
-        <section class="regla"><h3>Quién ha votado</h3>
-          <table class="tabla-admin"><thead><tr><th>Nombre</th><th>Categorías</th></tr></thead><tbody>
-          ${quien.map((q) => `<tr><td>${esc(q.nombre)}</td><td>${q.categorias} / ${cats.length}</td></tr>`).join("") || '<tr><td colspan="2">Aún nadie</td></tr>'}
-          </tbody></table></section>
+        <section class="regla"><h3>Votantes</h3>
+          <table class="tabla-admin"><thead><tr><th>Nombre</th><th>Votadas</th><th></th></tr></thead><tbody>
+          ${quien.map((q) => `<tr><td>${esc(q.nombre)}<br><small class="muted">${esc(q.email)}</small></td><td>${q.categorias} / ${cats.length}</td>
+            <td>${q.email === (S.usuario?.email || "").toLowerCase() ? "" : `<button class="icono" type="button" data-quitar-v="${esc(q.email)}" aria-label="Quitar a ${esc(q.nombre)}">${ICON.x}</button>`}</td></tr>`).join("") || '<tr><td colspan="3">Aún nadie</td></tr>'}
+          </tbody></table>
+          <form id="f-votante" style="margin-top:14px">
+            <label for="v-nombre">Añadir amigo</label>
+            <input id="v-nombre" type="text" placeholder="Nombre" required>
+            <input id="v-correo" type="email" placeholder="correo@gmail.com" required style="margin-top:8px">
+            <button class="btn oro-b peq" type="submit" style="margin-top:10px">Añadir</button>
+          </form></section>
       </div>`;
+    document.getElementById("f-votante").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const correo = document.getElementById("v-correo").value.trim().toLowerCase(), nombre = document.getElementById("v-nombre").value.trim();
+      if (!correo || !nombre) return;
+      const e = await API.votante(correo, nombre);
+      toast(e ? "Error: " + e.message : nombre + " añadido"); vistaAdmin();
+    });
+    app.querySelectorAll("[data-quitar-v]").forEach((b) => b.addEventListener("click", async () => {
+      const e = await API.quitarVotante(b.dataset.quitarV);
+      toast(e ? "Error: " + e.message : "Quitado"); vistaAdmin();
+    }));
     app.querySelectorAll("[data-aj]").forEach((b) => b.addEventListener("click", async () => {
       const k = b.dataset.aj; const e = await API.cambiarAjustes({ [k]: !S.ajustes[k] });
       if (e) toast("Error: " + e.message); vistaAdmin();

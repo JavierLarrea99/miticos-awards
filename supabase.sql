@@ -127,6 +127,34 @@ language sql stable security definer set search_path = public as $$
 $$;
 grant execute on function public.quien_ha_votado() to authenticated;
 
+-- Permisos de las tablas para la API (RLS sigue decidiendo qué filas)
+grant usage on schema public to anon, authenticated;
+grant select on public.ajustes to anon, authenticated;
+grant update on public.ajustes to authenticated;
+grant select on public.votantes to authenticated;
+grant select, insert, update, delete on public.votos to authenticated;
+
+-- Admin: añadir o quitar votantes desde la web
+create or replace function public.guardar_votante(correo text, nombre_v text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.es_admin() then raise exception 'Solo el admin'; end if;
+  insert into public.votantes (email, nombre) values (lower(trim(correo)), trim(nombre_v))
+  on conflict (email) do update set nombre = excluded.nombre;
+end $$;
+create or replace function public.quitar_votante(correo text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.es_admin() then raise exception 'Solo el admin'; end if;
+  if lower(correo) = public.mi_email() then raise exception 'No puedes quitarte a ti mismo'; end if;
+  delete from public.votos where email = lower(correo);
+  delete from public.votantes where email = lower(correo);
+end $$;
+revoke execute on function public.guardar_votante(text, text) from public, anon;
+revoke execute on function public.quitar_votante(text) from public, anon;
+grant execute on function public.guardar_votante(text, text) to authenticated;
+grant execute on function public.quitar_votante(text) to authenticated;
+
 -- =====================================================================
 --  TU GRUPO: cambia los nombres y correos (en minúsculas). Tú, con es_admin = true
 -- =====================================================================
